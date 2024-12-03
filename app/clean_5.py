@@ -12,6 +12,14 @@ def clean_csv(input_path, output_path, plantilla_path):
     # Ensure the file path is absolute (in case the current working directory is not correct)
     input_path = os.path.abspath(input_path)
 
+    # Debug print for plantilla_path
+    print(f"Plantilla CSV path: {plantilla_path}")
+
+    # Check if plantilla_path exists
+    if not os.path.exists(plantilla_path):
+        print(f"Error: The template file 'plantilla_csv.csv' does not exist at {plantilla_path}")
+        return
+
     # Load the input CSV
     try:
         ref_df = pd.read_csv(input_path, header=None, skip_blank_lines=False, low_memory=False)
@@ -19,7 +27,11 @@ def clean_csv(input_path, output_path, plantilla_path):
         print(f"Error reading file: {e}")
         return
 
-    plantilla_df = pd.read_csv(plantilla_path, header=None)
+    try:
+        plantilla_df = pd.read_csv(plantilla_path, header=None)
+    except Exception as e:
+        print(f"Error reading template file: {e}")
+        return
 
     # Remove rows containing unwanted text (e.g., headers, dashes)
     ref_df = ref_df.loc[~ref_df[0].astype(str).str.contains('Chronolgical Listing', na=False)]
@@ -57,8 +69,12 @@ def clean_csv(input_path, output_path, plantilla_path):
     print(f"Cleaned file saved to: {output_path}")
 
 if __name__ == "__main__":
-    plantilla_path = "plantilla_csv.csv"  # Path to the template CSV
-    output_path = "cleaned_data_exam.csv"  # Path to save the cleaned file
+    # Ensure the script's directory is the working directory
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    os.chdir(script_dir)
+
+    plantilla_path = os.path.join(script_dir, "plantilla_csv.csv")  # Path to the template CSV
+    output_path = os.path.join(script_dir, "cleaned_data_exam.csv")  # Path to save the cleaned file
 
     print("Drag and drop your file into the window.")
     input_file = get_selected_file()  # Use drag-and-drop functionality
