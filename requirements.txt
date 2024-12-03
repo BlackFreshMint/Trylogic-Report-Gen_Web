@@ -1,4 +1,3 @@
 tk
 pandas
-sqlite3
 flask
