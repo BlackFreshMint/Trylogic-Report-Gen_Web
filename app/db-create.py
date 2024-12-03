@@ -1,6 +1,6 @@
 import sqlite3
 
-db_path = 'plantilla_data.db'
+db_path = 'app/plantilla_data.db'
 
 conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
