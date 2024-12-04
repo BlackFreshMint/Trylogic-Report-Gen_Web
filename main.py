@@ -11,6 +11,29 @@ app = Flask(__name__)
 def home():
     return render_template('index.html')
 
+@app.route('/upload', methods=['POST'])
+def upload_file():
+    try:
+        if 'file' not in request.files:
+            print("No file part in the request.")
+            return jsonify({"error": "No file uploaded"}), 400
+
+        file = request.files['file']
+        if file.filename == '':
+            print("No file selected for uploading.")
+            return jsonify({"error": "No file selected"}), 400
+
+        upload_path = os.path.join(app.root_path, "app", "uploads", file.filename)
+        os.makedirs(os.path.dirname(upload_path), exist_ok=True)
+        file.save(upload_path)
+
+        print(f"File uploaded successfully: {upload_path}")
+        return jsonify({"message": "File uploaded successfully", "filename": file.filename})
+    except Exception as e:
+        print(f"Error in upload_file: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route('/db/create', methods=['POST'])
 def db_create():
     try:
