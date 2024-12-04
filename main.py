@@ -15,13 +15,13 @@ def home():
 @app.route('/upload', methods=['POST'])
 def upload_file():
     try:
-        # Ensure the 'file' part is in the request
+        # Check for file in the request
         if 'file' not in request.files:
             return jsonify({"error": "No file uploaded"}), 400
 
         file = request.files['file']
 
-        # Ensure the user selected a file
+        # Check if a file was selected
         if file.filename == '':
             return jsonify({"error": "No file selected"}), 400
 
@@ -29,25 +29,25 @@ def upload_file():
         if not file.filename.lower().endswith('.csv'):
             return jsonify({"error": "Only CSV files are allowed"}), 400
 
-        # Save the uploaded file to the uploads folder
+        # Save the uploaded file
         upload_path = os.path.join(app.root_path, "app", "uploads", file.filename)
         os.makedirs(os.path.dirname(upload_path), exist_ok=True)
         file.save(upload_path)
 
-        # Path for the cleaned file
-        output_path = os.path.join(app.root_path, "app", "output", "cleaned_data_exam.csv")
-        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        # Ensure the output directory exists
+        output_dir = os.path.join(app.root_path, "app", "output")
+        os.makedirs(output_dir, exist_ok=True)
+        output_path = os.path.join(output_dir, "cleaned_data_exam.csv")
 
-        # Path to the template CSV
+        # Clean the uploaded CSV file
         plantilla_path = os.path.join(app.root_path, "app", "static", "plantilla_csv.csv")
-
-        # Clean the uploaded CSV
         clean_csv(upload_path, output_path, plantilla_path)
 
-        # Notify success
-        return jsonify({"message": f"File uploaded and cleaned successfully: {file.filename}"})
+        # Success response
+        return jsonify({"message": f"File '{file.filename}' uploaded and cleaned successfully!"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 @app.route('/download', methods=['GET'])
 def download_cleaned_file():

@@ -161,6 +161,7 @@
 
         // Show notification
         function showNotification(message, isSuccess = true) {
+            console.log("Notification:", message); // Debug log
             notification.textContent = message;
             notification.className = `notification ${isSuccess ? "success" : "error"}`;
             notification.style.display = "block";
@@ -173,6 +174,10 @@
         async function fetchTableData() {
             try {
                 const response = await fetch("/db/select");
+                if (!response.ok) {
+                    throw new Error(`Error fetching table data: ${response.status}`);
+                }
+
                 const result = await response.json();
                 dataTable.innerHTML = ""; // Clear existing rows
                 result.data.forEach(row => {
@@ -184,7 +189,9 @@
                     });
                     dataTable.appendChild(tr);
                 });
+                showNotification("Table data refreshed successfully.");
             } catch (error) {
+                console.error(error);
                 showNotification("Failed to fetch table data.", false);
             }
         }
@@ -202,16 +209,18 @@
             try {
                 const response = await fetch("/upload", {
                     method: "POST",
-                    body: formData
+                    body: formData,
                 });
                 const result = await response.json();
+
                 if (response.ok) {
                     showNotification(result.message);
                 } else {
                     showNotification(result.error, false);
                 }
             } catch (error) {
-                showNotification("File upload failed.", false);
+                console.error(error);
+                showNotification("File upload failed. Please try again.", false);
             }
         }
 
@@ -250,6 +259,7 @@
         document.getElementById("downloadForm").addEventListener("submit", (e) => {
             e.preventDefault();
             window.location.href = "/download";
+            showNotification("Download started.");
         });
 
         // Handle data insertion
@@ -258,9 +268,10 @@
 
             try {
                 const response = await fetch("/db/insert", {
-                    method: "POST"
+                    method: "POST",
                 });
                 const result = await response.json();
+
                 if (response.ok) {
                     showNotification(result.message);
                     await fetchTableData(); // Refresh table after insertion
@@ -268,6 +279,7 @@
                     showNotification(result.error, false);
                 }
             } catch (error) {
+                console.error(error);
                 showNotification("Data insertion failed.", false);
             }
         });
@@ -282,9 +294,10 @@
 
             try {
                 const response = await fetch("/db/clean", {
-                    method: "POST"
+                    method: "POST",
                 });
                 const result = await response.json();
+
                 if (response.ok) {
                     showNotification(result.message);
                     await fetchTableData(); // Refresh table after cleaning
@@ -292,6 +305,7 @@
                     showNotification(result.error, false);
                 }
             } catch (error) {
+                console.error(error);
                 showNotification("Database cleaning failed.", false);
             }
         });
