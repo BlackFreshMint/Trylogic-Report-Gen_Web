@@ -39,6 +39,14 @@
             background-color: #0056b3;
         }
 
+        .danger {
+            background-color: #dc3545;
+        }
+
+        button.danger:hover {
+            background-color: #a71d2a;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
@@ -89,9 +97,19 @@
         <button type="submit">Upload and Clean</button>
     </form>
 
+    <!-- Download Cleaned File -->
+    <form id="downloadForm">
+        <button type="submit">Download Cleaned File</button>
+    </form>
+
     <!-- Insert Data -->
     <form id="insertForm">
         <button type="submit">Insert Data into Database</button>
+    </form>
+
+    <!-- Clean Database -->
+    <form id="cleanForm">
+        <button type="submit" class="danger">Clean Database</button>
     </form>
 
     <!-- Table for Displaying Data -->
@@ -176,6 +194,12 @@
             }
         });
 
+        // Handle file download
+        document.getElementById("downloadForm").addEventListener("submit", (e) => {
+            e.preventDefault();
+            window.location.href = "/download";
+        });
+
         // Handle data insertion
         document.getElementById("insertForm").addEventListener("submit", async (e) => {
             e.preventDefault();
@@ -193,6 +217,30 @@
                 }
             } catch (error) {
                 showNotification("Data insertion failed.", false);
+            }
+        });
+
+        // Handle database cleaning
+        document.getElementById("cleanForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            if (!confirm("Are you sure you want to clean the database? This action cannot be undone.")) {
+                return;
+            }
+
+            try {
+                const response = await fetch("/db/clean", {
+                    method: "POST"
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    showNotification(result.message);
+                    await fetchTableData(); // Refresh table after cleaning
+                } else {
+                    showNotification(result.error, false);
+                }
+            } catch (error) {
+                showNotification("Database cleaning failed.", false);
             }
         });
 

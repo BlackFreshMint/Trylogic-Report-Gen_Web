@@ -4,6 +4,7 @@ from app.clean_5 import clean_csv
 from app.db_create import create_database
 from app.select import fetch_all_data
 from app.insert import insert_data_into_db
+from app.clean_db import clean_database
 
 app = Flask(__name__)
 
@@ -14,25 +15,47 @@ def home():
 @app.route('/upload', methods=['POST'])
 def upload_file():
     try:
+        # Ensure the 'file' part is in the request
         if 'file' not in request.files:
-            print("No file part in the request.")
             return jsonify({"error": "No file uploaded"}), 400
 
         file = request.files['file']
+
+        # Ensure the user selected a file
         if file.filename == '':
-            print("No file selected for uploading.")
             return jsonify({"error": "No file selected"}), 400
 
+        # Validate file extension
+        if not file.filename.lower().endswith('.csv'):
+            return jsonify({"error": "Only CSV files are allowed"}), 400
+
+        # Save the uploaded file to the uploads folder
         upload_path = os.path.join(app.root_path, "app", "uploads", file.filename)
         os.makedirs(os.path.dirname(upload_path), exist_ok=True)
         file.save(upload_path)
 
-        print(f"File uploaded successfully: {upload_path}")
-        return jsonify({"message": "File uploaded successfully", "filename": file.filename})
+        # Path for the cleaned file
+        output_path = os.path.join(app.root_path, "app", "output", "cleaned_data_exam.csv")
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+        # Path to the template CSV
+        plantilla_path = os.path.join(app.root_path, "app", "static", "plantilla_csv.csv")
+
+        # Clean the uploaded CSV
+        clean_csv(upload_path, output_path, plantilla_path)
+
+        # Notify success
+        return jsonify({"message": f"File uploaded and cleaned successfully: {file.filename}"})
     except Exception as e:
-        print(f"Error in upload_file: {e}")
         return jsonify({"error": str(e)}), 500
 
+@app.route('/download', methods=['GET'])
+def download_cleaned_file():
+    try:
+        output_path = os.path.join(app.root_path, "app", "output", "cleaned_data_exam.csv")
+        return send_file(output_path, as_attachment=True)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/db/create', methods=['POST'])
 def db_create():
@@ -61,6 +84,16 @@ def db_insert():
         return jsonify({"message": "Data inserted successfully into the database"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route('/db/clean', methods=['POST'])
+def db_clean():
+    try:
+        db_path = os.path.join(app.root_path, "app", "plantilla_data.db")
+        clean_database(db_path)
+        return jsonify({"message": "Database cleaned successfully"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 if __name__ == '__main__':
     print("Registered routes:")
