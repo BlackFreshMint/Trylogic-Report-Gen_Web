@@ -82,6 +82,15 @@
             background-color: #f8d7da;
             color: #721c24;
         }
+
+        #dropArea {
+            transition: background-color 0.3s ease;
+        }
+
+        #dropArea:hover {
+            background-color: #f0f8ff;
+        }
+
     </style>
 </head>
 <body>
@@ -93,7 +102,12 @@
     <!-- File Upload -->
     <form id="uploadForm" enctype="multipart/form-data">
         <label for="file">Upload a CSV File:</label>
-        <input type="file" id="file" name="file" required>
+        <!-- Drag-and-Drop Area -->
+        <!-- Drag-and-Drop Area -->
+        <div id="dropArea" style="border: 2px dashed #007bff; padding: 5px; text-align: center; border-radius: 5px; cursor: pointer; width: 400px; margin-bottom: 15px ;">
+            <p>Drag and drop your CSV file here, or click to upload.</p>
+            <input type="file" id="fileInput" name="file" accept=".csv" style="display: none;">
+        </div>
         <button type="submit">Upload and Clean</button>
     </form>
 
@@ -142,6 +156,8 @@
     <script>
         const notification = document.getElementById("notification");
         const dataTable = document.getElementById("dataTable").querySelector("tbody");
+        const dropArea = document.getElementById("dropArea");
+        const fileInput = document.getElementById("fileInput");
 
         // Show notification
         function showNotification(message, isSuccess = true) {
@@ -173,10 +189,15 @@
             }
         }
 
-        // Handle file upload
-        document.getElementById("uploadForm").addEventListener("submit", async (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.target);
+        // Handle file upload via drag-and-drop
+        async function handleFileUpload(file) {
+            if (!file.name.toLowerCase().endsWith(".csv")) {
+                showNotification("Only CSV files are allowed.", false);
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("file", file);
 
             try {
                 const response = await fetch("/upload", {
@@ -191,6 +212,37 @@
                 }
             } catch (error) {
                 showNotification("File upload failed.", false);
+            }
+        }
+
+        // Drag-and-drop area interactions
+        dropArea.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            dropArea.style.backgroundColor = "#e9f5ff";
+        });
+
+        dropArea.addEventListener("dragleave", () => {
+            dropArea.style.backgroundColor = "transparent";
+        });
+
+        dropArea.addEventListener("drop", (e) => {
+            e.preventDefault();
+            dropArea.style.backgroundColor = "transparent";
+
+            if (e.dataTransfer.files.length) {
+                handleFileUpload(e.dataTransfer.files[0]); // Process the dropped file
+            }
+        });
+
+        // Open file picker when clicking the drop area
+        dropArea.addEventListener("click", () => {
+            fileInput.click();
+        });
+
+        // Handle file selection via file picker
+        fileInput.addEventListener("change", (e) => {
+            if (fileInput.files.length) {
+                handleFileUpload(fileInput.files[0]);
             }
         });
 
