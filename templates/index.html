@@ -4,24 +4,200 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CSV Cleaner and Database Manager</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        form {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        button {
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f4f4f4;
+        }
+
+        .notification {
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            display: none;
+        }
+
+        .notification.success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .notification.error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
 </head>
 <body>
     <h1>CSV Cleaner and Database Manager</h1>
-    <h2>Upload and Clean a File</h2>
-    <form action="/upload" method="post" enctype="multipart/form-data">
-        <label for="file">Select a file:</label>
-        <input type="file" id="file" name="file">
+
+    <!-- Notifications -->
+    <div id="notification" class="notification"></div>
+
+    <!-- File Upload -->
+    <form id="uploadForm" enctype="multipart/form-data">
+        <label for="file">Upload a CSV File:</label>
+        <input type="file" id="file" name="file" required>
         <button type="submit">Upload and Clean</button>
     </form>
 
-    <h2>Create Database</h2>
-    <form action="/db/create" method="post">
-        <button type="submit">Create Database</button>
+    <!-- Insert Data -->
+    <form id="insertForm">
+        <button type="submit">Insert Data into Database</button>
     </form>
 
-    <h2>View Database Data</h2>
-    <form action="/db/select" method="get">
-        <button type="submit">View Data</button>
-    </form>
+    <!-- Table for Displaying Data -->
+    <h2>Database Records</h2>
+    <table id="dataTable">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Load Size</th>
+                <th>Ticket</th>
+                <th>Mix</th>
+                <th>Truck</th>
+                <th>Order</th>
+                <th>Project</th>
+                <th>Target W/C</th>
+                <th>Actual W/C</th>
+                <th>Material</th>
+                <th>Target</th>
+                <th>Actual</th>
+                <th>Unit</th>
+                <th>% Var</th>
+                <th>Moisture</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Dynamic content will be inserted here -->
+        </tbody>
+    </table>
+
+    <script>
+        const notification = document.getElementById("notification");
+        const dataTable = document.getElementById("dataTable").querySelector("tbody");
+
+        // Show notification
+        function showNotification(message, isSuccess = true) {
+            notification.textContent = message;
+            notification.className = `notification ${isSuccess ? "success" : "error"}`;
+            notification.style.display = "block";
+            setTimeout(() => {
+                notification.style.display = "none";
+            }, 3000);
+        }
+
+        // Fetch and populate the database table
+        async function fetchTableData() {
+            try {
+                const response = await fetch("/db/select");
+                const result = await response.json();
+                dataTable.innerHTML = ""; // Clear existing rows
+                result.data.forEach(row => {
+                    const tr = document.createElement("tr");
+                    row.forEach(cell => {
+                        const td = document.createElement("td");
+                        td.textContent = cell !== null ? cell : ""; // Handle null values
+                        tr.appendChild(td);
+                    });
+                    dataTable.appendChild(tr);
+                });
+            } catch (error) {
+                showNotification("Failed to fetch table data.", false);
+            }
+        }
+
+        // Handle file upload
+        document.getElementById("uploadForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+
+            try {
+                const response = await fetch("/upload", {
+                    method: "POST",
+                    body: formData
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    showNotification(result.message);
+                } else {
+                    showNotification(result.error, false);
+                }
+            } catch (error) {
+                showNotification("File upload failed.", false);
+            }
+        });
+
+        // Handle data insertion
+        document.getElementById("insertForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            try {
+                const response = await fetch("/db/insert", {
+                    method: "POST"
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    showNotification(result.message);
+                    await fetchTableData(); // Refresh table after insertion
+                } else {
+                    showNotification(result.error, false);
+                }
+            } catch (error) {
+                showNotification("Data insertion failed.", false);
+            }
+        });
+
+        // Fetch data on page load
+        fetchTableData();
+    </script>
 </body>
 </html>
